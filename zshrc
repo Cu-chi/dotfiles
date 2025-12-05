@@ -90,6 +90,7 @@ alias c='clear'
 alias ..='cd ..'
 alias ll='eza -l'
 alias la='eza -la'
+alias cat='bat'
 
 # --- Compilation C ---
 alias ccw='cc -Wall -Wextra -Werror'
