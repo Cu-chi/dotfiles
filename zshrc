@@ -1,57 +1,57 @@
 # =============================================================================
-#  CONFIGURATION ZSH - 42 LYON
+#  ZSH CONFIGURATION - 42 LYON
 #  User: equentin
 # =============================================================================
 
-# --- 1. Variables d'environnement ---
+# --- 1. Environment Variables ---
 export USER="equentin"
 export MAIL="equentin@student.42lyon.fr"
 export LANG=en_US.UTF-8
 
-# Gestion du PATH (Regroupé pour la lisibilité)
-# Ajout de .local/bin (pip, scripts) et .cargo/bin (Rust/eza/bat)
+# PATH Management (Grouped for readability)
+# Adding .local/bin (pip, scripts) and .cargo/bin (Rust/eza/bat)
 export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
 
-# --- 2. Configuration de l'historique ---
+# --- 2. History Configuration ---
 HISTSIZE=10000
 SAVEHIST=10000
 HISTFILE=~/.zsh_history
-setopt SHARE_HISTORY          # Partager l'historique entre les terminaux
-setopt HIST_IGNORE_ALL_DUPS   # Pas de doublons
-setopt HIST_FIND_NO_DUPS      # Pas de doublons lors de la recherche
-setopt HIST_REDUCE_BLANKS     # Enlever les espaces inutiles
+setopt SHARE_HISTORY          # Share history between terminals
+setopt HIST_IGNORE_ALL_DUPS   # No duplicates
+setopt HIST_FIND_NO_DUPS      # No duplicates when searching
+setopt HIST_REDUCE_BLANKS     # Remove superfluous blanks
 
 # =============================================================================
-#  ZINIT (Gestionnaire de Plugins)
+#  ZINIT (Plugin Manager)
 # =============================================================================
 
 source "$HOME/.local/share/zinit/zinit.git/zinit.zsh"
 autoload -Uz _zinit
 (( ${+_comps} )) && _comps[zinit]=_zinit
 
-# Chargement des annexes Zinit (Requis pour le fonctionnement interne)
+# Load Zinit annexes (Required for internal functionality)
 zinit light-mode for \
     zdharma-continuum/zinit-annex-as-monitor \
     zdharma-continuum/zinit-annex-bin-gem-node \
     zdharma-continuum/zinit-annex-patch-dl \
     zdharma-continuum/zinit-annex-rust
 
-# --- Plugins Visuels & Productivité ---
-zinit light zsh-users/zsh-autosuggestions    # Suggestions grises
-zinit light zsh-users/zsh-completions        # Complétions supplémentaires
-zinit light zsh-users/zsh-syntax-highlighting # Coloration des commandes (A charger en dernier)
+# --- Visual & Productivity Plugins ---
+zinit light zsh-users/zsh-autosuggestions    # Grey autosuggestions
+zinit light zsh-users/zsh-completions        # Additional completions
+zinit light zsh-users/zsh-syntax-highlighting # Syntax highlighting (Must be loaded last)
 
 # =============================================================================
-#  OUTILS EXTERNES (Lazy Loading)
+#  EXTERNAL TOOLS (Lazy Loading)
 # =============================================================================
 
 # --- NVM (Node Version Manager) ---
-# Chargement différé de 1 seconde pour ne pas ralentir le démarrage
+# Delayed load by 1 second to avoid slowing down startup
 zinit ice wait"1" lucid
 zinit light lukechilds/zsh-nvm
 
 # --- FZF (Fuzzy Finder) ---
-# Configuration "Force Brute" pour s'assurer que le binaire est trouvé
+# "Brute Force" configuration to ensure binary is found
 zinit ice as"command" depth=1 \
     atclone"./install --bin" \
     atpull"%atclone" \
@@ -59,16 +59,16 @@ zinit ice as"command" depth=1 \
     multisrc"shell/{completion,key-bindings}.zsh"
 zinit light junegunn/fzf
 
-# Sécurité : Ajout manuel au PATH pour FZF
+# Safety: Manually add FZF to PATH
 export PATH="$HOME/.local/share/zinit/plugins/junegunn---fzf/bin:$PATH"
 
 # =============================================================================
-#  SYSTÈME DE COMPLÉTION (Optimisé pour 42/NFS)
+#  COMPLETION SYSTEM (Optimized for 42/NFS)
 # =============================================================================
 
 autoload -Uz compinit
-# Si le cache (.zcompdump) a moins de 24h, on l'utilise sans vérifier (rapide)
-# Sinon, on le régénère (lent, mais nécessaire 1x/jour)
+# If cache (.zcompdump) is less than 24h old, use it without checking (fast)
+# Otherwise, regenerate it (slow, but necessary 1x/day)
 if [[ -n ${ZDOTDIR:-$HOME}/.zcompdump(#qN.mh-24) ]]; then
     compinit -C
 else
@@ -81,18 +81,19 @@ zinit cdreplay -q
 #  ALIASES
 # =============================================================================
 
-# --- Outils 42 ---
+# --- 42 Tools ---
 alias paco='$HOME/francinette/tester.sh'
 alias zft='bash $HOME/Downloads/zft/run.sh'
 
-# --- Utilitaires ---
+# --- Utilities ---
 alias c='clear'
 alias ..='cd ..'
 alias ll='eza -l'
 alias la='eza -la'
 alias cat='bat'
+mkcd() { mkdir -p "$@" && cd "$@"; }
 
-# --- Compilation C ---
+# --- C Compilation ---
 alias ccw='cc -Wall -Wextra -Werror'
 alias val='valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes'
 
@@ -100,5 +101,5 @@ alias val='valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes'
 #  INTERFACE (Prompt)
 # =============================================================================
 
-# Lancement de Starship
+# Launch Starship
 eval "$(starship init zsh)"
