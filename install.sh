@@ -101,11 +101,27 @@ echo -e "${YELLOW}:: Configuring Dotfiles (Symlinks)...${NC}"
 create_link() {
     src=$1
     dest=$2
-    if [ -f "$dest" ] && [ ! -L "$dest" ]; then
-        echo "   Backing up existing: $dest -> $dest.bak"
+
+    # 1. If the destination exists and is a REAL directory (not a link), backup it
+    if [ -d "$dest" ] && [ ! -L "$dest" ]; then
+        echo "   Backing up existing directory: $dest -> $dest.bak"
         mv "$dest" "$dest.bak"
     fi
-    ln -sf "$src" "$dest"
+
+    # 2. If the destination exists and is a REAL file (not a link), backup it
+    if [ -f "$dest" ] && [ ! -L "$dest" ]; then
+        echo "   Backing up existing file: $dest -> $dest.bak"
+        mv "$dest" "$dest.bak"
+    fi
+
+    # 3. If it's already a symbolic link, remove it first
+    if [ -L "$dest" ]; then
+        # (This is what fixes your infinite loop bug)
+        rm "$dest"
+    fi
+
+    # 4. Create the new link cleanly
+    ln -s "$src" "$dest"
     echo -e "   ${GREEN}OK${NC} $dest"
 }
 
