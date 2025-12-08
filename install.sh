@@ -1,89 +1,108 @@
 #!/bin/bash
 
 # ==============================================================================
-#  INSTALLATION AUTOMATIQUE - ENVIRONNEMENT 42
+#  AUTOMATED INSTALLATION - 42 ENVIRONMENT
 # ==============================================================================
 
-# --- Couleurs pour le style ---
+# --- Styling Colors ---
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-# --- Chemins ---
+# --- Paths ---
 DOTFILES_DIR="$HOME/dotfiles"
 CONFIG_DIR="$HOME/.config"
 BIN_DIR="$HOME/.local/bin"
 FONT_DIR="$HOME/.local/share/fonts"
 
-# Ajout des bins locaux au PATH pour la durée du script
+# Add local bins to PATH for the duration of the script
 export PATH="$HOME/.cargo/bin:$BIN_DIR:$PATH"
 
-echo -e "${BLUE}🚀 Démarrage de l'installation de l'environnement...${NC}"
+echo -e "${BLUE}🚀 Starting environment installation...${NC}"
 
-# 1. Création des dossiers de base
-echo -e "${YELLOW}:: Vérification des dossiers...${NC}"
+# 1. Create base directories
+echo -e "${YELLOW}:: Checking directories...${NC}"
 mkdir -p "$BIN_DIR"
 mkdir -p "$CONFIG_DIR"
 mkdir -p "$FONT_DIR"
 
-# 2. Installation de RUST (Nécessaire pour eza, bat, ripgrep)
+# 2. RUST Installation (Required for eza, bat, ripgrep)
 if ! command -v cargo &> /dev/null; then
-    echo -e "${YELLOW}:: Installation de Rust (Cargo)...${NC}"
+    echo -e "${YELLOW}:: Installing Rust (Cargo)...${NC}"
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
     source "$HOME/.cargo/env"
 else
-    echo -e "${GREEN}:: Rust est déjà installé.${NC}"
+    echo -e "${GREEN}:: Rust is already installed.${NC}"
 fi
 
-# 3. Installation des outils modernes (via Cargo)
+# 3. Modern tools installation (via Cargo)
 install_cargo_tool() {
     if ! command -v $1 &> /dev/null; then
-        echo -e "${YELLOW}:: Installation de $1... (Peut prendre un peu de temps)${NC}"
+        echo -e "${YELLOW}:: Installing $1... (May take a while)${NC}"
         cargo install $1
     else
-        echo -e "${GREEN}:: $1 est déjà là.${NC}"
+        echo -e "${GREEN}:: $1 is already installed.${NC}"
     fi
 }
 
-install_cargo_tool "eza"       # Remplaçant de ls
-install_cargo_tool "bat"       # Remplaçant de cat
-install_cargo_tool "ripgrep"   # Remplaçant de grep
-# Note: Alacritty est long à compiler, on saute pour l'instant sauf si tu veux vraiment attendre 10min
+install_neovim() {
+    if ! command -v nvim &> /dev/null; then
+        echo -e "${YELLOW}:: Installing Neovim (Latest Stable)...${NC}"
+        # Download AppImage
+        curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim.appimage
+        
+        # Make executable
+        chmod u+x nvim.appimage
+        
+        # Move to local binary folder
+        mv nvim.appimage "$BIN_DIR/nvim"
+        
+        echo -e "${GREEN}:: Neovim installed!${NC}"
+    else
+        echo -e "${GREEN}:: Neovim is already installed.${NC}"
+    fi
+}
+
+install_cargo_tool "eza"       # Replacement for ls
+install_cargo_tool "bat"       # Replacement for cat
+install_cargo_tool "ripgrep"   # Replacement for grep
+# Note: Alacritty takes long to compile, skipping for now unless you really want to wait 10min
 # install_cargo_tool "alacritty" 
 
-# 4. Installation de Starship (Prompt)
+# 4. Starship Installation (Prompt)
 if ! command -v starship &> /dev/null; then
-    echo -e "${YELLOW}:: Installation de Starship...${NC}"
+    echo -e "${YELLOW}:: Installing Starship...${NC}"
     curl -sS https://starship.rs/install.sh | sh -s -- -y --bin-dir "$BIN_DIR"
 else
-    echo -e "${GREEN}:: Starship est déjà là.${NC}"
+    echo -e "${GREEN}:: Starship is already installed.${NC}"
 fi
 
-# 5. Installation des Polices (Nerd Fonts)
+install_neovim
+
+# 5. Nerd Fonts
 FONT_NAME="JetBrainsMono"
 if [ ! -f "$FONT_DIR/${FONT_NAME}NerdFont-Regular.ttf" ]; then
-    echo -e "${YELLOW}:: Téléchargement de la police ${FONT_NAME} Nerd Font...${NC}"
-    # On télécharge juste la version Regular pour économiser la place et le temps
+    echo -e "${YELLOW}:: Downloading ${FONT_NAME} Nerd Font...${NC}"
     wget -q --show-progress -O "$FONT_DIR/${FONT_NAME}NerdFont-Regular.ttf" \
     "https://github.com/ryanoasis/nerd-fonts/raw/master/patched-fonts/JetBrainsMono/Ligatures/Regular/JetBrainsMonoNerdFont-Regular.ttf"
     
-    # Rafraîchir le cache des polices
-    echo -e "${YELLOW}:: Mise à jour du cache des polices...${NC}"
+    # Refresh Fonts
+    echo -e "${YELLOW}:: Updating font cache...${NC}"
     fc-cache -f "$FONT_DIR"
 else
-    echo -e "${GREEN}:: Police Nerd Font déjà installée.${NC}"
+    echo -e "${GREEN}:: Nerd Font already installed.${NC}"
 fi
 
-# 6. Installation des Liens Symboliques (Symlinks)
-echo -e "${YELLOW}:: Configuration des Dotfiles (Symlinks)...${NC}"
+# 6. Symlinks
+echo -e "${YELLOW}:: Configuring Dotfiles (Symlinks)...${NC}"
 
 create_link() {
     src=$1
     dest=$2
     if [ -f "$dest" ] && [ ! -L "$dest" ]; then
-        echo "   Backup de l'existant : $dest -> $dest.bak"
+        echo "   Backing up existing: $dest -> $dest.bak"
         mv "$dest" "$dest.bak"
     fi
     ln -sf "$src" "$dest"
@@ -93,11 +112,14 @@ create_link() {
 create_link "$DOTFILES_DIR/zshrc" "$HOME/.zshrc"
 create_link "$DOTFILES_DIR/starship.toml" "$CONFIG_DIR/starship.toml"
 
-# Dossier spécifique pour Alacritty
+# Alacritty
 mkdir -p "$CONFIG_DIR/alacritty"
 create_link "$DOTFILES_DIR/alacritty.toml" "$CONFIG_DIR/alacritty/alacritty.toml"
 
+# nvim
+create_link "$DOTFILES_DIR/nvim" "$CONFIG_DIR/nvim"
+
 echo -e "${BLUE}===============================================${NC}"
-echo -e "${GREEN}✅ Installation terminée avec succès !${NC}"
+echo -e "${GREEN}✅ Installation successfully completed!${NC}"
 echo -e "${BLUE}===============================================${NC}"
-echo -e "👉 Pour finaliser : tape ${YELLOW}exec zsh${NC} ou redémarre ton terminal."
+echo -e "👉 To finalize: type ${YELLOW}exec zsh${NC} or restart your terminal."
