@@ -97,6 +97,15 @@ mkcd() { mkdir -p "$@" && cd "$@"; }
 alias ccw='cc -Wall -Wextra -Werror'
 alias val='valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes'
 
+# Switch vers config 42 (Vogsphere)
+alias git42='git config user.name "equentin" && git config user.email "equentin@student.42lyon.fr" && echo "Config Git: 42 (Vogsphere)"'
+
+# Switch vers config GitHub Personnel
+alias gitperso='git config user.name "Cu-chi" && git config user.email "110144918+Cu-chi@users.noreply.github.com" && echo "Config Git: Perso (GitHub)"'
+
+# Optionnel : Voir la config actuelle
+alias gitcheck='git config user.name && git config user.email'
+
 # =============================================================================
 #  INTERFACE (Prompt)
 # =============================================================================
