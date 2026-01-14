@@ -49,25 +49,37 @@ install_cargo_tool() {
 
 install_neovim() {
     if ! command -v nvim &> /dev/null; then
-        echo -e "${YELLOW}:: Installing Neovim (Latest Stable)...${NC}"
-        # Download AppImage
+        echo -e "${YELLOW}:: Installation de Neovim (AppImage - Extraction)...${NC}"
+
+        mkdir -p /tmp/nvim_install_$$
+        cd /tmp/nvim_install_$$ || exit 1
+
+        # download appimage
         curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim.appimage
-        
-        # Make executable
         chmod u+x nvim.appimage
         
-        # Move to local binary folder
-        mv nvim.appimage "$BIN_DIR/nvim"
-        
-        echo -e "${GREEN}:: Neovim installed!${NC}"
+        # binary extration
+        ./nvim.appimage --appimage-extract > /dev/null 2>&1
+
+        # executable is in squashfs-root
+        if [ -f "squashfs-root/AppRun" ]; then
+            mv squashfs-root/AppRun "$BIN_DIR/nvim"
+            echo -e "${GREEN}:: Neovim installé et extrait !${NC}"
+        else
+            echo -e "${RED}:: ERREUR: Extraction AppRun échouée.${NC}"
+        fi
+
+        cd - > /dev/null
+        rm -rf /tmp/nvim_install_$$
     else
-        echo -e "${GREEN}:: Neovim is already installed.${NC}"
+        echo -e "${GREEN}:: Neovim est déjà là.${NC}"
     fi
 }
 
 install_cargo_tool "eza"       # Replacement for ls
 install_cargo_tool "bat"       # Replacement for cat
 install_cargo_tool "ripgrep"   # Replacement for grep
+install_cargo_tool "fd-find"   # Replacement for find 
 # Note: Alacritty takes long to compile, skipping for now unless you really want to wait 10min
 # install_cargo_tool "alacritty" 
 
