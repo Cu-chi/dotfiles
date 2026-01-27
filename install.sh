@@ -28,7 +28,7 @@ mkdir -p "$BIN_DIR"
 mkdir -p "$CONFIG_DIR"
 mkdir -p "$FONT_DIR"
 
-# 2. RUST Installation (Required for eza, bat, ripgrep)
+# 2. RUST Installation (Required for eza, bat, ripgrep, alacritty)
 if ! command -v cargo &> /dev/null; then
     echo -e "${YELLOW}:: Installing Rust (Cargo)...${NC}"
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
@@ -47,41 +47,48 @@ install_cargo_tool() {
     fi
 }
 
-install_neovim() {
-    if ! command -v nvim &> /dev/null; then
-        echo -e "${YELLOW}:: Installation de Neovim (AppImage - Extraction)...${NC}"
-
-        mkdir -p /tmp/nvim_install_$$
-        cd /tmp/nvim_install_$$ || exit 1
-
-        # download appimage
-        curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim.appimage
-        chmod u+x nvim.appimage
-        
-        # binary extration
-        ./nvim.appimage --appimage-extract > /dev/null 2>&1
-
-        # executable is in squashfs-root
-        if [ -f "squashfs-root/AppRun" ]; then
-            mv squashfs-root/AppRun "$BIN_DIR/nvim"
-            echo -e "${GREEN}:: Neovim installé et extrait !${NC}"
-        else
-            echo -e "${RED}:: ERREUR: Extraction AppRun échouée.${NC}"
-        fi
-
-        cd - > /dev/null
-        rm -rf /tmp/nvim_install_$$
-    else
-        echo -e "${GREEN}:: Neovim est déjà là.${NC}"
-    fi
-}
-
 install_cargo_tool "eza"       # Replacement for ls
 install_cargo_tool "bat"       # Replacement for cat
 install_cargo_tool "ripgrep"   # Replacement for grep
-install_cargo_tool "fd-find"   # Replacement for find 
-# Note: Alacritty takes long to compile, skipping for now unless you really want to wait 10min
-# install_cargo_tool "alacritty" 
+install_cargo_tool "fd-find"   # Replacement for find (Required for Telescope)
+install_cargo_tool "alacritty" # GPU-accelerated terminal emulator
+
+# Configure Alacritty Desktop Shortcut
+if command -v alacritty &> /dev/null; then
+    echo -e "${YELLOW}:: Creating Desktop shortcut for Alacritty...${NC}"
+
+    mkdir -p "$HOME/.local/share/applications"
+    mkdir -p "$HOME/.local/share/icons"
+
+    # 2. Download official icon
+    if [ ! -f "$HOME/.local/share/icons/Alacritty.svg" ]; then
+        wget -q -O "$HOME/.local/share/icons/Alacritty.svg" \
+        "https://raw.githubusercontent.com/alacritty/alacritty/master/extra/logo/alacritty-term.svg"
+    fi
+
+    # 3. Create .desktop file
+    # Allows GNOME to recognize the application
+    cat > "$HOME/.local/share/applications/alacritty.desktop" <<EOF
+[Desktop Entry]
+Type=Application
+TryExec=$HOME/.cargo/bin/alacritty
+Exec=$HOME/.cargo/bin/alacritty
+Icon=$HOME/.local/share/icons/Alacritty.svg
+Terminal=false
+Categories=System;TerminalEmulator;
+
+Name=Alacritty
+GenericName=Terminal
+Comment=A fast, cross-platform, OpenGL terminal emulator
+StartupNotify=true
+EOF
+
+    # Set Alacritty as default terminal
+    gsettings set org.gnome.desktop.default-applications.terminal exec 'alacritty'
+    gsettings set org.gnome.desktop.default-applications.terminal exec-arg ''
+    
+    echo -e "${GREEN}:: Alacritty shortcut created and set as default!${NC}"
+fi
 
 # 4. Starship Installation (Prompt)
 if ! command -v starship &> /dev/null; then
@@ -90,8 +97,6 @@ if ! command -v starship &> /dev/null; then
 else
     echo -e "${GREEN}:: Starship is already installed.${NC}"
 fi
-
-install_neovim
 
 # 5. Nerd Fonts
 FONT_NAME="JetBrainsMono"
@@ -127,8 +132,8 @@ create_link() {
     fi
 
     # 3. If it's already a symbolic link, remove it first
+    # (This fixes the infinite loop bug)
     if [ -L "$dest" ]; then
-        # (This is what fixes your infinite loop bug)
         rm "$dest"
     fi
 
@@ -144,7 +149,7 @@ create_link "$DOTFILES_DIR/starship.toml" "$CONFIG_DIR/starship.toml"
 mkdir -p "$CONFIG_DIR/alacritty"
 create_link "$DOTFILES_DIR/alacritty.toml" "$CONFIG_DIR/alacritty/alacritty.toml"
 
-# nvim
+# nvim (Config only, binary must be installed manually or via other means)
 create_link "$DOTFILES_DIR/nvim" "$CONFIG_DIR/nvim"
 
 echo -e "${BLUE}===============================================${NC}"
